@@ -1,4 +1,1 @@
-streamlit
 beautifulsoup4
-requests
-python-telegram-bot
