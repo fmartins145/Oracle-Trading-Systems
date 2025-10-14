@@ -37,7 +37,7 @@ def main():
         analyzer = VTIAnalyzer(market_data)
         signals = analyzer.analyze_all_pairs()
 
-        print(f"
+        
 ✅ {len(signals)} sinais gerados
 ")
 
@@ -46,13 +46,13 @@ def main():
         bot = TelegramBot()
         bot.send_signals(signals)
 
-        print("
+        
 " + "=" * 60)
         print("✅ ANÁLISE CONCLUÍDA COM SUCESSO")
         print("=" * 60)
 
     except Exception as e:
-        print(f"
+        
 ❌ ERRO CRÍTICO: {str(e)}")
         print(f"Tipo: {type(e).__name__}")
 
