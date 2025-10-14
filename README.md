@@ -1,1 +1,0 @@
-# sinais-usd-realtime
