@@ -13,8 +13,8 @@ def main():
     print("🤖 ORACLE TRADING SYSTEM v1.0")
     print("=" * 60)
     print(f"⏰ Início: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')} UTC")
-    print(f"📅 Com calendário econômico integrado
-")
+    print(f"📅 Com calendário econômico integrado")
+
     
     try:
         # 1. Coleta dados de mercado
