@@ -1,6 +1,0 @@
-yfinance==0.2.40
-pandas==2.1.4
-numpy==1.26.2
-requests==2.31.0
-ta==0.11.0
-pytz==2024.1
