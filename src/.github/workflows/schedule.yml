@@ -2,8 +2,8 @@ name: Oracle Trading Systems Runner
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
-  workflow_dispatch:
+    - cron: "30 4 * * *"  # Executa automaticamente todos os dias às 04:30 UTC
+  workflow_dispatch:       # Permite execução manual pelo botão "Run workflow"
 
 jobs:
   run-oracle:
