@@ -1,0 +1,10 @@
+{
+  "EURUSD": "EURUSD=X",
+  "GBPUSD": "GBPUSD=X",
+  "USDCHF": "USDCHF=X",
+  "USDJPY": "USDJPY=X",
+  "USDCAD": "USDCAD=X",
+  "AUDUSD": "AUDUSD=X",
+  "XAUUSD": "XAUUSD=X",
+  "BTCUSD": "BTC-USD"
+}
