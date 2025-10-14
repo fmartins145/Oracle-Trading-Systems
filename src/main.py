@@ -34,7 +34,7 @@ def send_to_telegram(text: str):
         print("Telegram desabilitado ou secrets ausentes.")
         return
     bot = Bot(token=token)
-    bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.MARKDOWN)
+    bot.send_message(chat_id=chat_id, text=text)
 
 def run_once():
     utc = now_utc_iso()
@@ -50,10 +50,13 @@ def run_once():
             flow = flow_snapshot(df)
             vti = vti_validate(macro, tech, flow)
             report = render_report(p, utc, price, macro, tech, flow, vti, cfg)
-            send_to_telegram(report)
+
+            # 🔧 Teste temporário: envio simples
+            send_to_telegram("🚀 Teste simples: Oracle Trading Bot está vivo!")
+
             print(f"Enviado: {p} @ {utc}")
         except Exception as e:
-            send_to_telegram(f"*Oracle-Trading-Systems*\nFalha em {p}: {str(e)}")
+            send_to_telegram(f"Falha em {p}: {str(e)}")
             print(f"Erro {p}: {e}")
 
 if __name__ == "__main__":
