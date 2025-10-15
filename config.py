@@ -1,0 +1,44 @@
+import os
+
+# ===== CONFIGURAÇÕES PRINCIPAIS =====
+PAIRS = ['EURUSD=X', 'GBPUSD=X', 'USDCHF=X', 'USDJPY=X', 'USDCAD=X', 'AUDUSD=X', 'GC=F', 'BTC-USD']
+PAIR_NAMES = ['EURUSD', 'GBPUSD', 'USDCHF', 'USDJPY', 'USDCAD', 'AUDUSD', 'XAUUSD', 'BTCUSD']
+TIMEFRAME = '15m'
+ANALYSIS_INTERVAL = 30  # minutos
+
+# ===== TELEGRAM =====
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
+TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
+
+# ===== PARÂMETROS VTI =====
+VTI_THRESHOLD = 2  # Mínimo 2/3 para sinal condicional
+VTI_CONFIDENCE_HIGH = 3  # 3/3 para executar
+
+# ===== GESTÃO DE RISCO =====
+MAX_POSITION_SIZE = 2.0  # % do capital
+DEFAULT_LEVERAGE = 1
+RISK_PER_TRADE = 1.5  # % máximo de risco
+MIN_RISK_REWARD = 1.5
+
+# ===== ANÁLISE TÉCNICA =====
+RSI_PERIOD = 14
+RSI_OVERSOLD = 30
+RSI_OVERBOUGHT = 70
+MACD_FAST = 12
+MACD_SLOW = 26
+MACD_SIGNAL = 9
+BB_PERIOD = 20
+BB_STD = 2
+ATR_PERIOD = 14
+VOLUME_MA_PERIOD = 20
+
+# ===== TIMEFRAMES PARA CONVERGÊNCIA =====
+TIMEFRAMES = {
+    'primary': '15m',
+    'secondary': '1h',
+    'tertiary': '4h'
+}
+
+# ===== MENSAGENS =====
+SYSTEM_NAME = "🔮 ORACLE TRADING SYSTEMS v1.0"
+FRAMEWORK_VERSION = "GCT 10.0"
