@@ -1,0 +1,50 @@
+name: Oracle Trading System
+
+on:
+  schedule:
+    # Executa a cada 30 minutos (plano Free do GitHub Actions)
+    - cron: '*/30 * * * *'
+  
+  workflow_dispatch: # Permite execução manual
+  
+  push:
+    branches:
+      - main
+
+jobs:
+  analyze-markets:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: 📦 Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: 📚 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: 🔮 Run Oracle Trading System
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python main.py
+      
+      - name: ✅ Analysis completed
+        run: |
+          echo "✅ Oracle Trading System executado com sucesso!"
+          echo "⏰ Timestamp: $(date -u)"
