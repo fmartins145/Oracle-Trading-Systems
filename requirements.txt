@@ -1,0 +1,7 @@
+requests==2.31.0
+pandas==2.1.4
+numpy==1.26.2
+yfinance==0.2.33
+python-telegram-bot==20.7
+pytz==2024.1
+ta==0.11.0
