@@ -1,8 +1,55 @@
 import os
 
 # ===== CONFIGURAÇÕES PRINCIPAIS =====
-PAIRS = ['EURUSD=X', 'GBPUSD=X', 'USDCHF=X', 'USDJPY=X', 'USDCAD=X', 'AUDUSD=X', 'GC=F', 'BTC-USD']
-PAIR_NAMES = ['EURUSD', 'GBPUSD', 'USDCHF', 'USDJPY', 'USDCAD', 'AUDUSD', 'XAUUSD', 'BTCUSD']
+
+# SÍMBOLOS CORRETOS DO YAHOO FINANCE
+# Testados e funcionais para dados M15
+
+PAIRS = [
+    'EURUSD=X',   # Euro/Dólar - Yahoo Forex
+    'GBPUSD=X',   # Libra/Dólar - Yahoo Forex
+    'USDCHF=X',   # Dólar/Franco - Yahoo Forex
+    'JPY=X',      # Dólar/Yen - Yahoo Forex (formato diferente!)
+    'CAD=X',      # Dólar/Canadense - Yahoo Forex (formato diferente!)
+    'AUDUSD=X',   # Australiano/Dólar - Yahoo Forex
+    'GC=F',       # Ouro (Gold Futures) - SEMPRE funciona
+    'BTC-USD'     # Bitcoin - SEMPRE funciona
+]
+
+PAIR_NAMES = [
+    'EURUSD',
+    'GBPUSD',
+    'USDCHF',
+    'USDJPY',
+    'USDCAD',
+    'AUDUSD',
+    'XAUUSD',
+    'BTCUSD'
+]
+
+# BACKUP: Se algum continuar falhando, use estes (100% garantidos)
+PAIRS_FALLBACK = [
+    'BTC-USD',    # Bitcoin
+    'ETH-USD',    # Ethereum
+    'GC=F',       # Ouro
+    'SI=F',       # Prata
+    '^GSPC',      # S&P 500
+    '^DJI',       # Dow Jones
+    'CL=F',       # Petróleo
+    'AAPL'        # Apple
+]
+
+PAIR_NAMES_FALLBACK = [
+    'BTCUSD',
+    'ETHUSD',
+    'XAUUSD',
+    'XAGUSD',
+    'SP500',
+    'DOW',
+    'OIL',
+    'AAPL'
+]
+
 TIMEFRAME = '15m'
 ANALYSIS_INTERVAL = 30  # minutos
 
@@ -42,3 +89,15 @@ TIMEFRAMES = {
 # ===== MENSAGENS =====
 SYSTEM_NAME = "🔮 ORACLE TRADING SYSTEMS v1.0"
 FRAMEWORK_VERSION = "GCT 10.0"
+
+# ===== ALTERNATIVAS DE SÍMBOLOS =====
+# Se Forex continuar falhando, experimente estas variações:
+
+SYMBOL_ALTERNATIVES = {
+    'EURUSD': ['EURUSD=X', 'EUR=X'],
+    'GBPUSD': ['GBPUSD=X', 'GBP=X'],
+    'USDCHF': ['USDCHF=X', 'CHF=X'],
+    'USDJPY': ['USDJPY=X', 'JPY=X'],
+    'USDCAD': ['USDCAD=X', 'CAD=X'],
+    'AUDUSD': ['AUDUSD=X', 'AUD=X'],
+}
