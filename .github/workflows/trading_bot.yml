@@ -2,25 +2,26 @@ name: Oracle Trading System
 
 on:
   schedule:
-    - cron: '0 */8 * * *'  # A cada 8 horas (3x/dia)
-  workflow_dispatch:
+    # Executa a cada 8 horas: 00:00, 08:00, 16:00 UTC
+    - cron: '0 */8 * * *'
   
-  workflow_dispatch: # Permite execução manual
+  workflow_dispatch:  # Permite execução manual
   
   push:
     branches:
-      - main
+      - main  # Executa quando houver push na branch main
 
 jobs:
   analyze-markets:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: 🐍 Setup Python 3.11
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       
@@ -39,12 +40,15 @@ jobs:
       
       - name: 🔮 Run Oracle Trading System
         env:
+          TWELVE_DATA_KEY: ${{ secrets.TWELVE_DATA_KEY }}
+          TE_API_KEY: ${{ secrets.TE_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          python main.py
+          python -u main.py
       
       - name: ✅ Analysis completed
+        if: always()
         run: |
-          echo "✅ Oracle Trading System executado com sucesso!"
+          echo "✅ Oracle Trading System executado!"
           echo "⏰ Timestamp: $(date -u)"
