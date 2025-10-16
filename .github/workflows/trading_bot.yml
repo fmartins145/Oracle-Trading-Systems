@@ -2,8 +2,8 @@ name: Oracle Trading System
 
 on:
   schedule:
-    # Executa a cada 30 minutos (plano Free do GitHub Actions)
-    - cron: '*/30 * * * *'
+    - cron: '0 */8 * * *'  # A cada 8 horas (3x/dia)
+  workflow_dispatch:
   
   workflow_dispatch: # Permite execução manual
   
