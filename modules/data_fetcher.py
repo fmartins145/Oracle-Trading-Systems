@@ -1,14 +1,14 @@
-import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
 import pytz
 import requests
 import time
+import os
 
 class DataFetcher:
     """
-    Coleta dados APENAS do Yahoo Finance
-    Com múltiplas estratégias de retry e símbolos alternativos
+    Coleta dados usando Twelve Data API (GRATUITA)
+    800 requests/dia = suficiente para 8 pares, 3 timeframes, 3x/dia
     """
     
     def __init__(self):
@@ -16,151 +16,136 @@ class DataFetcher:
         self.calendar_cache = None
         self.calendar_cache_time = None
         
-        # Headers para evitar bloqueio
+        # Twelve Data API Key
+        self.twelve_data_key = os.environ.get('TWELVE_DATA_KEY', 'demo')
+        
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate',
-            'Connection': 'keep-alive',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
         
-        # Símbolos alternativos para cada par
-        self.symbol_alternatives = {
-            'EURUSD': ['EURUSD=X', 'EUR=X'],
-            'GBPUSD': ['GBPUSD=X', 'GBP=X'],
-            'USDCHF': ['USDCHF=X', 'CHF=X'],
-            'USDJPY': ['USDJPY=X', 'JPY=X'],
-            'USDCAD': ['USDCAD=X', 'CAD=X'],
-            'AUDUSD': ['AUDUSD=X', 'AUD=X'],
-            'XAUUSD': ['GC=F', 'XAUUSD=X'],
-            'BTCUSD': ['BTC-USD', 'BTCUSD'],
+        # Mapeamento de símbolos
+        self.symbol_map = {
+            'EURUSD': 'EUR/USD',
+            'GBPUSD': 'GBP/USD',
+            'USDCHF': 'USD/CHF',
+            'USDJPY': 'USD/JPY',
+            'USDCAD': 'USD/CAD',
+            'AUDUSD': 'AUD/USD',
+            'XAUUSD': 'XAU/USD',  # Ouro
+            'BTCUSD': 'BTC/USD'
+        }
+        
+        # Mapeamento de intervalos
+        self.interval_map = {
+            '15m': '15min',
+            '1h': '1h',
+            '4h': '4h',
+            '1d': '1day'
         }
     
-    def fetch_ohlcv(self, symbol, interval='15m', period='5d', max_retries=3):
+    def fetch_ohlcv(self, symbol, interval='15m', period='5d'):
         """
-        Busca dados com múltiplas estratégias:
-        1. Tenta símbolo original
-        2. Tenta símbolos alternativos
-        3. Usa método download() como fallback
-        4. Exponential backoff entre tentativas
+        Busca dados do Twelve Data
+        
+        Args:
+            symbol: Par (EURUSD, GBPUSD, etc)
+            interval: Timeframe ('15m', '1h', '4h', '1d')
+            period: Período (não usado, Twelve Data retorna últimas velas)
+        
+        Returns:
+            DataFrame com OHLCV
         """
         
-        # Determina símbolos a testar
-        symbols_to_try = self._get_symbols_to_try(symbol)
-        
-        print(f"\n📊 Buscando {symbol}:")
-        
-        for sym in symbols_to_try:
-            print(f"  🔄 Tentando: {sym}")
-            
-            # Estratégia 1: yfinance Ticker
-            df = self._fetch_with_ticker(sym, interval, period, max_retries)
-            
-            if df is not None and not df.empty:
-                print(f"  ✅ Sucesso com {sym}: {len(df)} velas")
-                return df
-            
-            # Estratégia 2: yfinance download
-            df = self._fetch_with_download(sym, interval, period)
-            
-            if df is not None and not df.empty:
-                print(f"  ✅ Sucesso (download) com {sym}: {len(df)} velas")
-                return df
-            
-            print(f"  ❌ {sym} falhou")
-        
-        print(f"  ❌ TODAS as alternativas falharam para {symbol}")
-        return None
-    
-    def _get_symbols_to_try(self, symbol):
-        """Retorna lista de símbolos alternativos para tentar"""
-        
-        # Remove sufixos comuns
-        clean_symbol = symbol.replace('=X', '').replace('-USD', '').replace('USD', '')
-        
-        # Verifica se há alternativas definidas
-        if clean_symbol in self.symbol_alternatives:
-            return self.symbol_alternatives[clean_symbol]
-        
-        # Senão, tenta variações comuns
-        variations = [
-            symbol,
-            f"{symbol}=X",
-            f"{symbol}-USD",
-            clean_symbol,
-        ]
-        
-        # Remove duplicatas mantendo ordem
-        return list(dict.fromkeys(variations))
-    
-    def _fetch_with_ticker(self, symbol, interval, period, max_retries):
-        """Método 1: Usar yf.Ticker()"""
-        
-        for attempt in range(max_retries):
-            try:
-                # Cria sessão com headers
-                session = requests.Session()
-                session.headers.update(self.headers)
-                
-                # Cria ticker
-                ticker = yf.Ticker(symbol, session=session)
-                
-                # Busca histórico
-                df = ticker.history(
-                    period=period,
-                    interval=interval,
-                    timeout=30,
-                    raise_errors=False
-                )
-                
-                if df is not None and not df.empty:
-                    # Remove timezone
-                    if df.index.tz is not None:
-                        df.index = df.index.tz_localize(None)
-                    return df
-                
-                # Se vazio, aguarda e tenta novamente
-                if attempt < max_retries - 1:
-                    wait = 2 ** attempt
-                    time.sleep(wait)
-            
-            except Exception as e:
-                if attempt < max_retries - 1:
-                    wait = 2 ** attempt
-                    time.sleep(wait)
-                else:
-                    pass
-        
-        return None
-    
-    def _fetch_with_download(self, symbol, interval, period):
-        """Método 2: Usar yf.download() (mais robusto)"""
+        print(f"\n📊 Buscando {symbol} ({interval}):")
         
         try:
-            df = yf.download(
-                tickers=symbol,
-                period=period,
-                interval=interval,
-                progress=False,
-                show_errors=False,
-                timeout=30
-            )
+            # Converte símbolo
+            td_symbol = self.symbol_map.get(symbol, symbol)
+            td_interval = self.interval_map.get(interval, '15min')
             
-            if df is None or df.empty:
+            # Calcula outputsize baseado no período
+            outputsize_map = {
+                '15m': 480,  # ~5 dias de M15 (24h * 4 * 5)
+                '1h': 720,   # ~1 mês de H1
+                '4h': 180,   # ~1 mês de H4
+                '1d': 90     # ~3 meses de D1
+            }
+            outputsize = outputsize_map.get(interval, 480)
+            
+            print(f"  🔄 API: {td_symbol} | {td_interval} | {outputsize} velas")
+            
+            # Request para Twelve Data
+            url = 'https://api.twelvedata.com/time_series'
+            
+            params = {
+                'symbol': td_symbol,
+                'interval': td_interval,
+                'apikey': self.twelve_data_key,
+                'outputsize': outputsize,
+                'format': 'JSON'
+            }
+            
+            response = requests.get(url, params=params, timeout=30)
+            
+            if response.status_code != 200:
+                print(f"  ❌ HTTP {response.status_code}")
                 return None
             
-            # Se MultiIndex (quando baixa múltiplos tickers)
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.droplevel(1)
+            data = response.json()
             
-            # Remove timezone
+            # Verifica erros
+            if 'status' in data and data['status'] == 'error':
+                print(f"  ❌ API Error: {data.get('message', 'Unknown')}")
+                
+                # Se erro de limite, aguarda
+                if 'limit' in data.get('message', '').lower():
+                    print(f"  ⚠️ Limite de API atingido!")
+                
+                return None
+            
+            if 'values' not in data:
+                print(f"  ❌ Sem dados. Keys: {list(data.keys())}")
+                return None
+            
+            # Converte para DataFrame
+            df = pd.DataFrame(data['values'])
+            
+            if df.empty:
+                print(f"  ❌ DataFrame vazio")
+                return None
+            
+            # Renomeia colunas
+            df = df.rename(columns={
+                'open': 'Open',
+                'high': 'High',
+                'low': 'Low',
+                'close': 'Close',
+                'volume': 'Volume'
+            })
+            
+            # Converte tipos
+            for col in ['Open', 'High', 'Low', 'Close']:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+            
+            df['Volume'] = pd.to_numeric(df['Volume'], errors='coerce').fillna(1000)
+            
+            # Converte datetime
+            df['datetime'] = pd.to_datetime(df['datetime'])
+            df = df.set_index('datetime')
+            
+            # Ordena (mais antigo → mais recente)
+            df = df.sort_index()
+            
+            # Remove timezone se houver
             if df.index.tz is not None:
                 df.index = df.index.tz_localize(None)
+            
+            print(f"  ✅ {len(df)} velas obtidas")
             
             return df
         
         except Exception as e:
+            print(f"  ❌ Exceção: {str(e)}")
             return None
     
     def fetch_multiple_timeframes(self, symbol):
@@ -174,21 +159,26 @@ class DataFetcher:
         
         # M15 (primário) - MAIS IMPORTANTE
         print("\n⏰ Timeframe M15 (primário):")
-        df_15m = self.fetch_ohlcv(symbol, interval='15m', period='5d')
+        df_15m = self.fetch_ohlcv(symbol, interval='15m')
         data['15m'] = df_15m
         
         if df_15m is None:
             print(f"\n❌ FALHA CRÍTICA: Não foi possível obter dados M15 para {symbol}")
             return {'15m': None, '1h': None, '4h': None}
         
+        # Pequeno delay para não sobrecarregar API
+        time.sleep(0.5)
+        
         # H1 (secundário)
         print("\n⏰ Timeframe H1 (secundário):")
-        df_1h = self.fetch_ohlcv(symbol, interval='1h', period='1mo', max_retries=2)
+        df_1h = self.fetch_ohlcv(symbol, interval='1h')
         data['1h'] = df_1h
         
-        # H4/D1 (terciário)
-        print("\n⏰ Timeframe D1 (terciário):")
-        df_4h = self.fetch_ohlcv(symbol, interval='1d', period='3mo', max_retries=2)
+        time.sleep(0.5)
+        
+        # H4 (terciário)
+        print("\n⏰ Timeframe H4 (terciário):")
+        df_4h = self.fetch_ohlcv(symbol, interval='4h')
         data['4h'] = df_4h
         
         # Resumo
@@ -196,20 +186,15 @@ class DataFetcher:
         print(f"📊 RESUMO {symbol}:")
         print(f"  M15: {'✅ ' + str(len(df_15m)) + ' velas' if df_15m is not None else '❌ Sem dados'}")
         print(f"  H1:  {'✅ ' + str(len(df_1h)) + ' velas' if df_1h is not None else '⚠️  Sem dados'}")
-        print(f"  D1:  {'✅ ' + str(len(df_4h)) + ' velas' if df_4h is not None else '⚠️  Sem dados'}")
+        print(f"  H4:  {'✅ ' + str(len(df_4h)) + ' velas' if df_4h is not None else '⚠️  Sem dados'}")
         print(f"{'='*60}\n")
         
         return data
     
     def get_current_price(self, symbol):
         """Obtém preço atual"""
-        df = self.fetch_ohlcv(symbol, interval='1m', period='1d')
+        df = self.fetch_ohlcv(symbol, interval='15m')
         
-        if df is not None and not df.empty:
-            return df['Close'].iloc[-1]
-        
-        # Fallback: último preço do M15
-        df = self.fetch_ohlcv(symbol, interval='15m', period='1d')
         if df is not None and not df.empty:
             return df['Close'].iloc[-1]
         
@@ -306,54 +291,28 @@ class DataFetcher:
             'error': 'API indisponível'
         }
     
-    def test_all_symbols(self, symbols):
-        """Testa quais símbolos funcionam"""
-        
+    def test_api_connection(self):
+        """Testa conexão com Twelve Data"""
         print("\n" + "="*60)
-        print("🧪 TESTANDO TODOS OS SÍMBOLOS")
+        print("🧪 TESTANDO CONEXÃO TWELVE DATA")
         print("="*60)
         
-        working = []
-        failing = []
+        test_symbol = 'EURUSD'
         
-        for symbol in symbols:
-            print(f"\n📊 Testando: {symbol}")
-            df = self.fetch_ohlcv(symbol, interval='1d', period='5d')
-            
-            if df is not None and not df.empty:
-                working.append(symbol)
-                print(f"✅ {symbol} FUNCIONA")
-            else:
-                failing.append(symbol)
-                print(f"❌ {symbol} FALHOU")
+        print(f"\nTestando {test_symbol}...")
+        df = self.fetch_ohlcv(test_symbol, interval='15m')
         
-        print("\n" + "="*60)
-        print("📊 RESULTADOS:")
-        print("="*60)
-        print(f"\n✅ Funcionando ({len(working)}):")
-        for s in working:
-            print(f"  • {s}")
-        
-        print(f"\n❌ Falhando ({len(failing)}):")
-        for s in failing:
-            print(f"  • {s}")
-        
-        return working, failing
+        if df is not None and not df.empty:
+            print(f"\n✅ SUCESSO! API funcionando corretamente!")
+            print(f"📊 Obtidas {len(df)} velas")
+            print(f"💰 Último preço: {df['Close'].iloc[-1]:.5f}")
+            return True
+        else:
+            print(f"\n❌ FALHA! Verifique sua API key")
+            return False
 
 
 # TESTE
 if __name__ == "__main__":
-    import config
-    
     fetcher = DataFetcher()
-    
-    # Testa todos os símbolos do config
-    working, failing = fetcher.test_all_symbols(config.PAIRS)
-    
-    print(f"\n\n🎯 RECOMENDAÇÃO:")
-    if len(working) >= 6:
-        print(f"✅ {len(working)}/8 pares funcionando - SISTEMA VIÁVEL!")
-    elif len(working) >= 4:
-        print(f"⚠️ {len(working)}/8 pares funcionando - Considere usar apenas os que funcionam")
-    else:
-        print(f"❌ Apenas {len(working)}/8 pares - Use símbolos alternativos (crypto/commodities)")
+    fetcher.test_api_connection()
