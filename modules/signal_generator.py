@@ -7,7 +7,7 @@ from modules.risk_manager import RiskManager
 class SignalGenerator:
     """Gera sinais de trading completos com framework GCT"""
     
-    def __init__(self, pair_name, pair_symbol, data_multi_tf):
+   def __init__(self, pair_name, pair_symbol, data_multi_tf):
     self.pair_name = pair_name
     self.pair_symbol = pair_symbol
     self.data = data_multi_tf
@@ -25,6 +25,10 @@ class SignalGenerator:
     
     self.valid = True
     self.tech = TechnicalAnalyzer(self.df_primary)
+    self.vti = VTIAnalyzer(pair_name, data_multi_tf, self.tech)
+    
+    self.current_price = self.df_primary['Close'].iloc[-1]
+    self.atr = self.df_primary['ATR'].iloc[-1] if 'ATR' in self.df_primary.columns else 0.001  TechnicalAnalyzer(self.df_primary)
     self.vti = VTIAnalyzer(pair_name, data_multi_tf, self.tech)
     
     self.current_price = self.df_primary['Close'].iloc[-1]
