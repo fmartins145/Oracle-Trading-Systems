@@ -7,32 +7,24 @@ from modules.risk_manager import RiskManager
 class SignalGenerator:
     """Gera sinais de trading completos com framework GCT"""
     
-   def __init__(self, pair_name, pair_symbol, data_multi_tf):
-    self.pair_name = pair_name
-    self.pair_symbol = pair_symbol
-    self.data = data_multi_tf
-    self.df_primary = data_multi_tf.get('15m')
-    
-    # FIX: Validação correta de DataFrame
-    if self.df_primary is None:
-        self.valid = False
-        return
-    
-    # Verifica se está vazio DEPOIS de confirmar que não é None
-    if self.df_primary.empty:
-        self.valid = False
-        return
-    
-    self.valid = True
-    self.tech = TechnicalAnalyzer(self.df_primary)
-    self.vti = VTIAnalyzer(pair_name, data_multi_tf, self.tech)
-    
-    self.current_price = self.df_primary['Close'].iloc[-1]
-    self.atr = self.df_primary['ATR'].iloc[-1] if 'ATR' in self.df_primary.columns else 0.001  TechnicalAnalyzer(self.df_primary)
-    self.vti = VTIAnalyzer(pair_name, data_multi_tf, self.tech)
-    
-    self.current_price = self.df_primary['Close'].iloc[-1]
-    self.atr = self.df_primary['ATR'].iloc[-1] if 'ATR' in self.df_primary.columns else 0.001 TechnicalAnalyzer(self.df_primary)
+    def __init__(self, pair_name, pair_symbol, data_multi_tf):
+        self.pair_name = pair_name
+        self.pair_symbol = pair_symbol
+        self.data = data_multi_tf
+        self.df_primary = data_multi_tf.get('15m')
+        
+        # FIX: Validação correta de DataFrame
+        if self.df_primary is None:
+            self.valid = False
+            return
+        
+        # Verifica se está vazio DEPOIS de confirmar que não é None
+        if self.df_primary.empty:
+            self.valid = False
+            return
+        
+        self.valid = True
+        self.tech = TechnicalAnalyzer(self.df_primary)
         self.vti = VTIAnalyzer(pair_name, data_multi_tf, self.tech)
         
         self.current_price = self.df_primary['Close'].iloc[-1]
@@ -91,7 +83,7 @@ class SignalGenerator:
             'take_profits': take_profits,
             'position': position,
             'support_resistance': sr_levels,
-            'confirmations': confirmations[:3],  # Top 3
+            'confirmations': confirmations[:3],
             'vti_details': vti_report,
             'risk_level': self._assess_risk_level(volatility, vti_score)
         }
