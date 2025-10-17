@@ -17,7 +17,6 @@ class DataFetcher:
         self.calendar_cache = None
         self.calendar_cache_time = None
         
-        # APIs
         self.twelve_data_key = os.environ.get('TWELVE_DATA_KEY', 'demo')
         self.te_api_key = os.environ.get('TE_API_KEY', '')
         
@@ -25,7 +24,6 @@ class DataFetcher:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
         
-        # Mapeamento de símbolos
         self.symbol_map = {
             'EURUSD': 'EUR/USD',
             'GBPUSD': 'GBP/USD',
@@ -106,11 +104,7 @@ class DataFetcher:
                 print(f"  ❌ DataFrame vazio")
                 return None
             
-            # ========================================
-            # FIX: Volume pode não existir em Forex
-            # ========================================
-            
-            # Renomeia colunas base
+            # Renomeia colunas base (Volume pode não existir)
             column_mapping = {
                 'open': 'Open',
                 'high': 'High',
@@ -118,7 +112,6 @@ class DataFetcher:
                 'close': 'Close'
             }
             
-            # Adiciona volume se existir
             if 'volume' in df.columns:
                 column_mapping['volume'] = 'Volume'
             
@@ -132,7 +125,6 @@ class DataFetcher:
             if 'Volume' in df.columns:
                 df['Volume'] = pd.to_numeric(df['Volume'], errors='coerce').fillna(1000)
             else:
-                # Forex não tem volume, cria fake
                 df['Volume'] = 1000
             
             # Datetime
@@ -149,12 +141,10 @@ class DataFetcher:
         
         except Exception as e:
             print(f"  ❌ Exceção: {str(e)}")
-            import traceback
-            traceback.print_exc()
             return None
     
     def fetch_multiple_timeframes(self, symbol):
-        """Busca dados em múltiplos timeframes"""
+        """Busca dados em múltiplos timeframes COM DELAYS para respeitar rate limit"""
         
         print(f"\n{'='*60}")
         print(f"📈 ANALISANDO: {symbol}")
@@ -171,19 +161,26 @@ class DataFetcher:
             print(f"\n❌ FALHA CRÍTICA: {symbol} sem dados M15")
             return {'15m': None, '1h': None, '4h': None}
         
-        time.sleep(0.5)
+        # DELAY para respeitar rate limit (8 requests/min)
+        print("  ⏳ Aguardando 2s (rate limit)...")
+        time.sleep(2)
         
         # H1
         print("\n⏰ Timeframe H1 (secundário):")
         df_1h = self.fetch_ohlcv(symbol, interval='1h')
         data['1h'] = df_1h
         
-        time.sleep(0.5)
+        print("  ⏳ Aguardando 2s (rate limit)...")
+        time.sleep(2)
         
         # H4
         print("\n⏰ Timeframe H4 (terciário):")
         df_4h = self.fetch_ohlcv(symbol, interval='4h')
         data['4h'] = df_4h
+        
+        # DELAY entre pares
+        print("  ⏳ Aguardando 5s antes do próximo par...")
+        time.sleep(5)
         
         print(f"\n{'='*60}")
         print(f"📊 RESUMO {symbol}:")
